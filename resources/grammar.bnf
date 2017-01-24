@@ -1,0 +1,86 @@
+(* COMMON *)
+
+template ::= (b* object-expr* tag-expression*)*
+
+<body> ::= template
+b ::= #'(?s)((?!\{\{|\{\%).)*'
+s ::= #'[\s\n\r]*'
+<ltag> ::= <'{%'> <s>
+<rtag> ::= <s> <'%}'>
+quote ::= '"'
+<lparen> ::= <s> '(' <s>
+<rparen> ::= <s> ')' <s>
+
+<token> ::= #'[a-zA-Z-_]+[a-zA-Z0-9-_]*'
+bool ::= 'true' | 'false'
+int ::= #'-?\d+'
+float ::= #'-?\d+\.\d+'
+strset ::= #'((?!\\\")[^"])*'
+strescape ::= #'\\*\\"'
+string ::= <quote> (strescape* strset)* <quote>
+
+lookup ::= token (* TODO: index/key lookup, first/last etc *)
+
+<object> ::= bool / int / float / string / lookup
+
+object-expr ::= <'{{'> <s> object <s> filter* <s>? <'}}'>
+filter ::= <'|'> <s> (token | token <s> <':'> <s> args) <s>
+<args> ::= object (<s> <','> <s> object)*
+
+<tag-expression> ::= assign
+                   | increment
+                   | decrement
+                   | capture
+                   | if
+                   | for
+                   | break
+                   | continue
+
+(* VARIABLES *)
+
+assign ::= ltag <'assign '> <s> token <s> <'='> <s> object <s> rtag
+increment ::= ltag <'increment '> <s> token rtag
+decrement ::= ltag <'decrement '> <s> token rtag
+capture ::= ltag <'capture '> <s> token rtag
+            body
+            ltag <'endcapture'> rtag
+
+(* PREDICATES *)
+
+operator ::= '==' | '!=' | '>' | '<' | '>=' | '<=' | 'contains'
+
+or_  ::= <s> 'or' <s>
+and_ ::= <s> 'and' <s>
+assertion ::= object | object <s> operator <s> object
+or ::= and (<or_> and)*
+and ::= predicate (<and_> predicate)*
+predicate ::= or | <lparen> or <rparen> | assertion
+
+(* CONTROL FLOW *)
+
+if ::= ltag <'if '> <s> predicate rtag
+       body
+       elsif*
+       else?
+       ltag <'endif'> rtag
+elsif ::= ltag <'elsif '> <s> predicate rtag body
+else ::= ltag <'else '> <s> rtag body
+
+(* ITERATION *)
+
+break ::= ltag <'break'> rtag
+continue ::= ltag <'continue'> rtag
+
+range-start ::= int | lookup
+range-end ::= int | lookup
+range ::= <'('> range-start <'..'> range-end <')'>
+
+for-limit ::= <s> <'limit:'> <s> int <s>
+for-offset ::= <s> <'offset:'> <s> int <s>
+for-reversed ::= <s> <'reversed'> <s>
+for-opts ::= (for-limit |for-offset | for-limit for-offset | for-offset for-limit)? for-reversed?
+
+for ::= ltag <'for '> token <s> <'in '> (object / range) for-opts?
+        rtag
+        body
+        ltag <'endfor'> rtag
