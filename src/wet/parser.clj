@@ -30,8 +30,6 @@
 
 ;; Parsing
 
-(declare eval-node)
-
 (defn- parse-template [& nodes] (->Template nodes))
 
 (defn- parse-string [& nodes] (apply str nodes))
@@ -119,6 +117,8 @@
 
 ;; Evaluation
 
+(declare eval-node)
+
 (defn- resolve-lookup
   [node context opts]
   (let [var-name (:name node)]
@@ -167,17 +167,17 @@
 
 (defn- resolve-object-expr
   [node context opts]
-  (let [{:keys [obj filters]} node]
-    (when-let [v (resolve-object obj context opts)]
-      (try
-        (reduce (fn [res f] (apply-filter f res context opts)) v filters)
-        (catch Exception e
-          ;; As in the original implementation,
-          ;; when at least one filter in the filter chain is undefined,
-          ;; a whole expression is rendered as nil
-          (if (::undefined-filter (ex-data e))
-            (when-not (:strict-filters? opts)
-              (throw e))))))))
+  (let [{:keys [obj filters]} node
+        v (resolve-object obj context opts)]
+    (try
+      (reduce (fn [res f] (apply-filter f res context opts)) v filters)
+      (catch Exception e
+        ;; As in the original implementation,
+        ;; when at least one filter in the filter chain is undefined,
+        ;; a whole expression is rendered as nil
+        (if (::undefined-filter (ex-data e))
+          (when-not (:strict-filters? opts)
+            (throw e)))))))
 
 (defn- eval-assertion
   [node context opts]
@@ -280,8 +280,9 @@
   [(eval-for node context opts) context])
 
 (defmethod eval-node Assign
-  [node context _]
-  ["" (assoc-in context [:params (:var node)] (:value node))])
+  [node context opts]
+  (let [[v _] (eval-node (:value node) context opts)]
+    ["" (assoc-in context [:params (:var node)] v)]))
 
 (defmethod eval-node Capture
   [node context opts]

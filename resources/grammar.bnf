@@ -1,6 +1,6 @@
 (* COMMON *)
 
-template ::= (b* object-expr* tag-expression*)*
+template ::= (b* object-expr-block* tag-expression*)*
 
 <body> ::= template
 b ::= #'(?s)((?!\{\{|\{\%).)*'
@@ -23,7 +23,9 @@ lookup ::= token (* TODO: index/key lookup, first/last etc *)
 
 <object> ::= bool / int / float / string / lookup
 
-object-expr ::= <'{{'> <s> object <s> filter* <s>? <'}}'>
+object-expr ::= <s> object <s> filter* <s>
+<object-expr-block> ::= <'{{'> object-expr <'}}'>
+
 filter ::= <'|'> <s> (token | token <s> <':'> <s> args) <s>
 <args> ::= object (<s> <','> <s> object)*
 
@@ -38,7 +40,7 @@ filter ::= <'|'> <s> (token | token <s> <':'> <s> args) <s>
 
 (* VARIABLES *)
 
-assign ::= ltag <'assign '> <s> token <s> <'='> <s> object <s> rtag
+assign ::= ltag <'assign '> <s> token <s> <'='> <s> object-expr <s> rtag
 increment ::= ltag <'increment '> <s> token rtag
 decrement ::= ltag <'decrement '> <s> token rtag
 capture ::= ltag <'capture '> <s> token rtag
