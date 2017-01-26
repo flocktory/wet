@@ -30,6 +30,8 @@
 
 ;; Parsing
 
+(def ^:private parse (insta/parser "resources/grammar.bnf"))
+
 (defn- parse-template [& nodes] (->Template nodes))
 
 (defn- parse-string [& nodes] (apply str nodes))
@@ -304,8 +306,6 @@
 (defmethod eval-node Continue
   [_ _ _]
   (throw (ex-info nil {::iteration ::continue})))
-
-(def ^:private parse (insta/parser "resources/grammar.bnf"))
 
 (defn- transform [template] (insta/transform transformer template))
 

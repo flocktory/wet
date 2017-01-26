@@ -1,6 +1,7 @@
 (ns wet.filters-test
   (:require [clojure.test :refer :all]
-            [wet.test-utils :refer [render]]))
+            [wet.test-utils :refer [render]])
+  (:import (java.util Date)))
 
 ;; Most of the test examples were taken from the official documentation
 ;; http://shopify.github.io/liquid
@@ -35,6 +36,15 @@
                                    "{{ x }} "
                                    "{% endfor %}")
                               {:xs [1 2 nil 3 nil 4]}))))
+
+  (testing "date"
+    (are [expected template] (= expected (render template {"today" (Date. 1485449974810)}))
+      "Thu, Jan 26, 17" "{{ today | date: \"%a, %b %d, %y\" }}"
+      "2017" "{{ today | date: \"%Y\" }}"
+      "Jan 26, 17" "{{ today | date: \"%b %d, %y\" }}"
+      "Jan 26, 17" "{{ \"January 26, 2017\" | date: \"%b %d, %y\" }}"
+      "" "{{ \"unknown format\" | date: \"%Y\" }}")
+    (is (some? (re-find #"20\d{2}" (render "{{ \"now\" | date: \"%Y\" }}")))))
 
   (testing "default"
     (are [expected template] (= expected (render template))

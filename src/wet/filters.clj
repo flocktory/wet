@@ -4,7 +4,7 @@
              [string :as str]
              [walk :as walk]])
   (:import (java.net URLDecoder URLEncoder)
-           (java.text SimpleDateFormat)))
+           (java.util Calendar Date)))
 
 (defmacro deffilter
   [name & body]
@@ -27,6 +27,16 @@
     (string? v) (cond
                   (re-find #"^-?\d+$" v) (Long. v)
                   (re-find #"^-?(\d+\.\d*|\d*\.\d+)$" v) (Float. v))))
+
+(defn- safe-date
+  [v]
+  (cond
+    (integer? v) (if (zero? (quot v 1E10)) (Date. (* v 1000)) (Date. v))
+    (instance? Date v) v
+    (= "now" v) (Date.)
+    (string? v) (try
+                  (Date. v)
+                  (catch IllegalArgumentException _ nil))))
 
 (deffilter abs
   "Returns the absolute value of a number."
@@ -58,8 +68,9 @@
   "Converts a timestamp into another date format. The format for the syntax
    is the same as strftime."
   [v fmt]
-  ;; TODO
-  v)
+  (when-let [d (safe-date v)]
+    (let [fmt* (str/replace fmt #"%([a-zA-Z])" "%1\\$t$1")]
+      (format fmt* d))))
 
 (deffilter default
   "Allows you to specify a fallback in case a value doesn’t exist."
@@ -101,7 +112,7 @@
     (str v)
     #"['\"><]|&(?!([a-zA-Z]+|#\d+);)"
     (fn [[match _]]
-      (if-let [replacement (get HTML-ESCAPE (first match))]
+      (if-let [replacement (get HTML-ESCAPE (clojure.core/first match))]
         replacement
         match))))
 
