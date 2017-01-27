@@ -34,13 +34,15 @@ filter ::= <'|'> <s> (token | token <s> <':'> <s> args) <s>
 <args> ::= object (<s> <','> <s> object)*
 
 <tag-expression> ::= assign
-                   | increment
-                   | decrement
-                   | capture
-                   | if
-                   | for
                    | break
+                   | capture
+                   | case
                    | continue
+                   | decrement
+                   | for
+                   | if
+                   | increment
+                   | unless
 
 (* VARIABLES *)
 
@@ -64,12 +66,11 @@ predicate ::= or | <lparen> or <rparen> | assertion
 
 (* CONTROL FLOW *)
 
-if ::= ltag <'if '> <s> predicate rtag
-       body
-       elsif*
-       else?
-       ltag <'endif'> rtag
+case ::= ltag <'case '> object rtag when+ else? ltag <'endcase'> rtag
+if ::= ltag <'if '> <s> predicate rtag body elsif* else? ltag <'endif'> rtag
+unless ::= ltag <'unless '> <s> predicate rtag body elsif* else? ltag <'endunless'> rtag
 elsif ::= ltag <'elsif '> <s> predicate rtag body
+when ::= ltag <'when '> object rtag body
 else ::= ltag <'else '> <s> rtag body
 
 (* ITERATION *)

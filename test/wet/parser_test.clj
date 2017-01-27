@@ -39,6 +39,30 @@
       (catch Exception e
         (is (= (ex-data e) {::parser/undefined-variable "z"})))))
 
+  (testing "control flow"
+    (are [expected template] (= expected (render template {"a" 42 "b" false}))
+      "ok" (str "{% if a %}"
+                "ok"
+                "{% else %}"
+                "not ok"
+                "{% endif %}")
+      "ok" (str "{% if b %}"
+                "not ok"
+                "{% elsif a == 43 %}"
+                "not ok"
+                "{% elsif a < 100 %}"
+                "ok"
+                "{% endif %}")
+      "ok" (str "{% unless b %}"
+                "ok"
+                "{% endunless %}")
+      "ok" (str "{% case a %}"
+                "{% when 41 %}"
+                "not ok"
+                "{% when 42 %}"
+                "ok"
+                "{% endcase %}")))
+
   (testing "iteration"
     (are [expected template]
       (= expected (render template {"xs" (range 1 6)

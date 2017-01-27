@@ -9,6 +9,7 @@
 (defrecord Assign [var value])
 (defrecord Break [])
 (defrecord Capture [var template])
+(defrecord Case [val whens else])
 (defrecord CollIndex [key])
 (defrecord Condition [pred template])
 (defrecord Continue [])
@@ -29,6 +30,8 @@
 (defrecord PredicateOr [pred1 pred2])
 (defrecord Range [start end])
 (defrecord Template [nodes])
+(defrecord Unless [conditions else])
+(defrecord When [val template])
 
 ;; Parsing
 
@@ -38,13 +41,22 @@
 
 (defn- parse-string [& nodes] (apply str nodes))
 
-(defn- parse-if
-  [pred template & nodes]
+(defn- parse-condition-expr
+  [constructor pred template & nodes]
   (let [conditions (->> nodes
                         (take-while (partial instance? Condition))
                         (cons (->Condition pred template)))
         else (when (instance? Else (last nodes)) (last nodes))]
-    (->If conditions else)))
+    (constructor conditions else)))
+
+(def ^:private parse-if (partial parse-condition-expr ->If))
+(def ^:private parse-unless (partial parse-condition-expr ->Unless))
+
+(defn- parse-case
+  [val & nodes]
+  (let [whens (take-while (partial instance? When) nodes)
+        else (when (instance? Else (last nodes)) (last nodes))]
+    (->Case val whens else)))
 
 (defn- parse-assertion
   ([v] v)
@@ -108,6 +120,9 @@
    :else ->Else
    :elsif ->Condition
    :if parse-if
+   :unless parse-unless
+   :case parse-case
+   :when ->When
    :and parse-and
    :or parse-or
    ;; Iteration
@@ -224,7 +239,23 @@
       (i? PredicateAnd) (every? #(eval-predicate % context opts)
                                 [(:pred1 node) (:pred2 node)]))))
 
-(defn- eval-if
+(defn- eval-condition-expr
+  [node context opts]
+  (let [conditions (:conditions node)
+        eval-pred* (fn [n] (eval-predicate (:pred n) context opts))
+        eval-template* (fn [n] (first (eval-node (:template n) context opts)))
+        entry-holds? (cond-> (eval-pred* (first conditions))
+                       (instance? Unless node) not)]
+    (if entry-holds?
+      (eval-template* (first conditions))
+      (loop [conditions* (rest conditions)]
+        (if-let [condition (first conditions*)]
+          (if (eval-pred* condition)
+            (eval-template* condition)
+            (recur (rest conditions*)))
+          (some-> (:else node) eval-template* first))))))
+
+#_(defn- eval-if
   [node context opts]
   (loop [conditions (:conditions node)]
     (if-let [condition (first conditions)]
@@ -232,6 +263,16 @@
         (first (eval-node (:template condition) context opts))
         (recur (rest conditions)))
       (some-> (:else node) :template (eval-node context opts) first))))
+
+(defn- eval-case
+  [node context opts]
+  (let [val (resolve-object (:val node) context opts)]
+    (loop [whens (:whens node)]
+      (if-let [when* (first whens)]
+        (if (= val (resolve-object (:val when*) context opts))
+          (first (eval-node (:template when*) context opts))
+          (recur (rest whens)))
+        (some-> (:else node) :template (eval-node context opts) first)))))
 
 (defn- apply-for-opts
   [{:keys [limit offset reversed?]} coll]
@@ -290,7 +331,15 @@
 
 (defmethod eval-node If
   [node context opts]
-  [(eval-if node context opts) context])
+  [(eval-condition-expr node context opts) context])
+
+(defmethod eval-node Unless
+  [node context opts]
+  [(eval-condition-expr node context opts) context])
+
+(defmethod eval-node Case
+  [node context opts]
+  [(eval-case node context opts) context])
 
 (defmethod eval-node For
   [node context opts]
