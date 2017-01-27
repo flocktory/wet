@@ -26,6 +26,14 @@
       "Hello world!" "Hello {{ x }}!"
       "Hello WORLD!" "Hello {{ x | upcase }}!"
       "The meaning of Liquid is 42." "The meaning of Liquid is {{ y }}.")
+
+    (are [expected template] (= expected (render template
+                                                 {:x [:some-data
+                                                      {:friends [{:name "Monica"}
+                                                                 {:name "Ross"}]}]}))
+      "MONICA" "{{ x.last[\"friends\"].first[\"name\"] | upcase }}"
+      "Ro" "{{ x[1][\"friends\"][1][\"name\"] | remove: \"s\" }}")
+
     (try
       (render "Hello {{ z }}!")
       (catch Exception e

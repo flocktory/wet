@@ -1,5 +1,6 @@
 (ns wet.parser
-  (:require [instaparse.core :as insta]
+  (:require [clojure.walk :as walk]
+            [instaparse.core :as insta]
             [wet.filters :as filters]))
 
 ;; Parse tree nodes
@@ -8,6 +9,7 @@
 (defrecord Assign [var value])
 (defrecord Break [])
 (defrecord Capture [var template])
+(defrecord CollIndex [key])
 (defrecord Condition [pred template])
 (defrecord Continue [])
 (defrecord Decrement [var])
@@ -20,7 +22,7 @@
 (defrecord ForReversed [])
 (defrecord If [conditions else])
 (defrecord Increment [var])
-(defrecord Lookup [name])
+(defrecord Lookup [name fns])
 (defrecord ObjectExpr [obj filters])
 (defrecord Operator [value])
 (defrecord PredicateAnd [pred1 pred2])
@@ -57,13 +59,11 @@
   ([pred] pred)
   ([pred1 pred2] (->PredicateAnd pred1 pred2)))
 
-(defn- parse-object-expr
-  [obj & filters]
-  (->ObjectExpr obj filters))
+(defn- parse-object-expr [obj & filters] (->ObjectExpr obj filters))
 
-(defn- parse-filter
-  [name & args]
-  (->Filter name args))
+(defn- parse-filter [name & args] (->Filter name args))
+
+(defn- parse-inline-filter [name] (->Filter name nil))
 
 (defn- parse-for-opts
   [& nodes]
@@ -78,10 +78,11 @@
   ([var collection for-opts template]
    (->For var collection for-opts template)))
 
+(defn- parse-lookup [name & nodes] (->Lookup name nodes))
+
 (def ^:private transformer
   {:template parse-template
    :b identity
-   :filter parse-filter
    ;; Data types
    :int read-string
    :float read-string
@@ -89,8 +90,12 @@
    :strset identity
    :strescape read-string
    :string parse-string
-   :lookup ->Lookup
+   ;; Lookup
+   :lookup parse-lookup
    :object-expr parse-object-expr
+   :filter parse-filter
+   :inline-filter parse-inline-filter
+   :index ->CollIndex
    ;; Assignment
    :capture ->Capture
    :assign ->Assign
@@ -120,15 +125,7 @@
 ;; Evaluation
 
 (declare eval-node)
-
-(defn- resolve-lookup
-  [node context opts]
-  (let [var-name (:name node)]
-    (when (and (not (contains? (:params context) var-name))
-               (:strict-variables? opts))
-      (throw (ex-info (str "Undefined variable " var-name)
-                      {::undefined-variable var-name})))
-    (get-in context [:params var-name])))
+(declare resolve-lookup)
 
 (defn- resolve-range
   [{:keys [start end]} context opts]
@@ -166,6 +163,24 @@
     (if (:strict-filters? opts)
       (throw (ex-info (str "Undefined filter " name) {::undefined-filter name}))
       s)))
+
+(defn- resolve-lookup
+  [node context opts]
+  (let [var-name (:name node)]
+    (when (and (not (contains? (:params context) var-name))
+               (:strict-variables? opts))
+      (throw (ex-info (str "Undefined variable " var-name)
+                      {::undefined-variable var-name})))
+    (reduce
+      (fn [res f]
+        (cond
+          (instance? Filter f) (apply-filter f res context opts)
+          (instance? CollIndex f) (let [key (:key f)]
+                                    (if (sequential? res)
+                                      (when (integer? key) (get res key))
+                                      (get (walk/stringify-keys res) key)))))
+      (get-in context [:params var-name])
+      (:fns node))))
 
 (defn- resolve-object-expr
   [node context opts]

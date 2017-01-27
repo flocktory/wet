@@ -2,9 +2,9 @@
   (:refer-clojure :exclude [first last map remove replace reverse sort])
   (:require [clojure
              [string :as str]
-             [walk :as walk]])
-  (:import (java.net URLDecoder URLEncoder)
-           (java.util Calendar Date)))
+             [walk :as walk]]
+            [wet.utils :as utils])
+  (:import (java.net URLDecoder URLEncoder)))
 
 (defmacro deffilter
   [name & body]
@@ -20,28 +20,10 @@
        (filter (comp (partial = s) ::liquid-name meta))
        (clojure.core/first)))
 
-(defn- safe-num
-  [v]
-  (cond
-    (number? v) v
-    (string? v) (cond
-                  (re-find #"^-?\d+$" v) (Long. v)
-                  (re-find #"^-?(\d+\.\d*|\d*\.\d+)$" v) (Float. v))))
-
-(defn- safe-date
-  [v]
-  (cond
-    (integer? v) (if (zero? (quot v 1E10)) (Date. (* v 1000)) (Date. v))
-    (instance? Date v) v
-    (= "now" v) (Date.)
-    (string? v) (try
-                  (Date. v)
-                  (catch IllegalArgumentException _ nil))))
-
 (deffilter abs
   "Returns the absolute value of a number."
   [v]
-  (some-> v safe-num Math/abs))
+  (some-> v utils/safe-num Math/abs))
 
 (deffilter append
   [v & args]
@@ -57,7 +39,7 @@
   "Rounds the input up to the nearest whole number. Liquid tries to convert
    the input to a number before the filter is applied."
   [v]
-  (some-> v safe-num Math/ceil int))
+  (some-> v utils/safe-num Math/ceil int))
 
 (deffilter compact
   "Removes any nil values from a collection."
@@ -68,7 +50,7 @@
   "Converts a timestamp into another date format. The format for the syntax
    is the same as strftime."
   [v fmt]
-  (when-let [d (safe-date v)]
+  (when-let [d (utils/safe-date v)]
     (let [fmt* (str/replace fmt #"%([a-zA-Z])" "%1\\$t$1")]
       (format fmt* d))))
 
@@ -82,7 +64,7 @@
    The result is rounded down to the nearest integer (that is, the floor)
    if the divisor is an integer."
   [v divisor]
-  (when-let [v* (safe-num v)]
+  (when-let [v* (utils/safe-num v)]
     (if (every? integer? [v* divisor]) (quot v* divisor) (/ v* divisor))))
 
 (deffilter downcase
@@ -126,7 +108,7 @@
   "Rounds a number down to the nearest whole number. Liquid tries to convert
    the input to a number before the filter is applied."
   [v]
-  (some-> v safe-num Math/floor int))
+  (some-> v utils/safe-num Math/floor int))
 
 (deffilter join
   "Combines the items in an array into a single string using the argument as
@@ -151,17 +133,19 @@
    from another object."
   [v key]
   (when (and (sequential? v) (every? map? v))
-    (clojure.core/map (fn [el] (get (walk/keywordize-keys el) (keyword key))) v)))
+    (clojure.core/map
+      (fn [el] (get (walk/stringify-keys el) (utils/safe-str key)))
+      v)))
 
 (deffilter minus
   "Subtracts a number from another number."
   [v n]
-  (some-> v safe-num (- n)))
+  (some-> v utils/safe-num (- n)))
 
 (deffilter modulo
   "Returns the remainder of a division operation."
   [v n]
-  (some-> v safe-num (mod n)))
+  (some-> v utils/safe-num (mod n)))
 
 (deffilter newline-to-br
   "Replaces every newline (\\n) with an HTML line break (<br>)."
@@ -171,7 +155,7 @@
 (deffilter plus
   "Adds a number to another number."
   [v & ns]
-  (when-let [v* (safe-num v)]
+  (when-let [v* (utils/safe-num v)]
     (apply (partial + v*) ns)))
 
 (deffilter prepend
@@ -211,7 +195,7 @@
    as an argument, to that number of decimal places."
   ([v] (round v 0))
   ([v p]
-    (when-let [v* (safe-num v)]
+    (when-let [v* (utils/safe-num v)]
       (let [formatted (format (str "%." p "f") v*)]
         (cond-> (Float. formatted)
           (zero? p) int)))))
@@ -278,7 +262,7 @@
 (deffilter times
   "Multiplies a number by another number."
   [v & ns]
-  (when-let [v* (safe-num v)]
+  (when-let [v* (utils/safe-num v)]
     (apply (partial * v*) ns)))
 
 (deffilter truncate

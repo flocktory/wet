@@ -10,6 +10,8 @@ s ::= #'[\s\n\r]*'
 quote ::= '"'
 <lparen> ::= <s> '(' <s>
 <rparen> ::= <s> ')' <s>
+<lbrace> ::= <s> '[' <s>
+<rbrace> ::= <s> ']' <s>
 
 <token> ::= #'[a-zA-Z-_]+[a-zA-Z0-9-_]*'
 bool ::= 'true' | 'false'
@@ -19,7 +21,9 @@ strset ::= #'((?!\\\")[^"])*'
 strescape ::= #'\\*\\"'
 string ::= <quote> (strescape* strset)* <quote>
 
-lookup ::= token (* TODO: index/key lookup, first/last etc *)
+index ::= <lbrace> (int | string) <rbrace>
+inline-filter ::= <'.'> token
+lookup ::= token (index* inline-filter*)*
 
 <object> ::= bool / int / float / string / lookup
 
