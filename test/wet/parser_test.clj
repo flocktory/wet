@@ -9,7 +9,7 @@
 
   (testing "assignment"
     (are [expected template] (= expected (render template {"foo" 42}))
-      "Hello world!" (str "{% assign bar = \"world\" %}"
+      "Hello world!" (str "{% assign bar = 'world' %}"
                           "Hello {{ bar }}!")
       "Hello world!" (str "{% capture bar %}"
                           "world"
@@ -31,8 +31,8 @@
                                                  {:x [:some-data
                                                       {:friends [{:name "Monica"}
                                                                  {:name "Ross"}]}]}))
-      "MONICA" "{{ x.last[\"friends\"].first[\"name\"] | upcase }}"
-      "Ro" "{{ x[1][\"friends\"][1][\"name\"] | remove: \"s\" }}")
+      "MONICA" "{{ x.last['friends'].first['name'] | upcase }}"
+      "Ro" "{{ x[1]['friends'][1]['name'] | remove: 's' }}")
 
     (try
       (render "Hello {{ z }}!")

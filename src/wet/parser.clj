@@ -99,8 +99,10 @@
    :int read-string
    :float read-string
    :bool read-string
-   :strset identity
-   :strescape read-string
+   :sq-str-set identity
+   :sq-str-escape read-string
+   :dq-str-set identity
+   :dq-str-escape read-string
    :string parse-string
    ;; Lookup
    :lookup parse-lookup
