@@ -1,13 +1,26 @@
 (ns wet.core
   (:require [clojure.walk :as walk]
-            [wet.parser :as parser]))
+            [wet
+             [parser :as parser]
+             [rendering :as rendering]]))
+
+(defn parse
+  ([template]
+   (parse template nil))
+  ([template opts]
+   (cond->
+     (parser/parse-and-transform template)
+     (:analyze? opts)
+     (as-> transformed-template
+       (with-meta transformed-template (parser/analyze transformed-template))))))
 
 (defn render
-  [template params &
-   [{:keys [strict-variables strict-filters]
-     :or {strict-variables? true strict-filters? true}
-     :as opts}]]
-  (let [tree (parser/parse-and-transform template)
-        params* {:params (walk/stringify-keys params)}
-        [res context] (parser/eval-template tree params* opts)]
-    res))
+  [transformed-template
+   {:keys [params filters return-context?]
+    :or {return-context? false}}]
+  (let [context {:params (walk/stringify-keys params)
+                 :filters (walk/stringify-keys filters)}
+        [result context*] (rendering/eval-template transformed-template context)]
+    (if return-context?
+      [result (select-keys context* [:undefined-variables :undefined-filters])]
+      result)))

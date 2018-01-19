@@ -6,7 +6,7 @@
 ;; Most of the test examples were taken from the official documentation
 ;; http://shopify.github.io/liquid
 
-(deftest standard-filters-test
+(deftest core-filters-test
   (testing "abs"
     (are [expected template] (= expected (render template))
       "17" "{{ -17 | abs }}"
@@ -35,10 +35,10 @@
                                    "{% for x in compacted %}"
                                    "{{ x }} "
                                    "{% endfor %}")
-                              {:xs [1 2 nil 3 nil 4]}))))
+                              {:params {:xs [1 2 nil 3 nil 4]}}))))
 
   (testing "date"
-    (are [expected template] (= expected (render template {"today" (Date. 1485449974810)}))
+    (are [expected template] (= expected (render template {:params {:today (Date. 1485449974810)}}))
       "Thu, Jan 26, 17" "{{ today | date: \"%a, %b %d, %y\" }}"
       "2017" "{{ today | date: \"%Y\" }}"
       "Jan 26, 17" "{{ today | date: \"%b %d, %y\" }}"
@@ -111,9 +111,9 @@
                         "{% for name in names %}"
                         "{{ name }} "
                         "{% endfor %}")
-                   {:friends [{:name "Chandler"}
-                              {:name "Joey"}
-                              {:name "Monica"}]}))))
+                   {:params {:friends [{:name "Chandler"}
+                                       {:name "Joey"}
+                                       {:name "Monica"}]}}))))
 
   (testing "minus"
     (are [expected template] (= expected (render template))
@@ -272,11 +272,11 @@
       "Tetsuro+Takara" "{{ \"Tetsuro Takara\" | url_encode }}")))
 
 (deftest custom-filter-test
-  (let [params {"s" "liquid"}
-        opts {:custom-filters {"greet" (partial str "Hello, ")
-                               "upcase" (partial str "upcase ")}}]
+  (let [params {:params {:s "liquid"}
+                :filters {:greet (partial str "Hello, ")
+                          :upcase (partial str "upcase ")}}]
     (testing "new filter"
-      (is (= "Hello, liquid" (render "{{ s | greet }}" params opts))))
+      (is (= "Hello, liquid" (render "{{ s | greet }}" params))))
 
-    (testing "overriding standard filter"
-      (is (= "upcase liquid" (render "{{ s | upcase }}" params opts))))))
+    (testing "overriding a core filter"
+      (is (= "upcase liquid" (render "{{ s | upcase }}" params))))))

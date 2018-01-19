@@ -8,7 +8,8 @@
     (is (= "Hello world!" (render "Hello world!"))))
 
   (testing "assignment"
-    (are [expected template] (= expected (render template {"foo" 42}))
+    (are [expected template]
+      (= expected (render template {:params {"foo" 42}}))
       "Hello world!" (str "{% assign bar = 'world' %}"
                           "Hello {{ bar }}!")
       "Hello world!" (str "{% capture bar %}"
@@ -22,25 +23,23 @@
                    "{{ foo }}")))
 
   (testing "objects"
-    (are [expected template] (= expected (render template {"x" "world" "y" 42}))
+    (are [expected template]
+      (= expected (render template {:params {"x" "world" "y" 42}}))
       "Hello world!" "Hello {{ x }}!"
       "Hello WORLD!" "Hello {{ x | upcase }}!"
       "The meaning of Liquid is 42." "The meaning of Liquid is {{ y }}.")
 
-    (are [expected template] (= expected (render template
-                                                 {:x [:some-data
-                                                      {:friends [{:name "Monica"}
-                                                                 {:name "Ross"}]}]}))
+    (are [expected template]
+      (= expected (render template
+                          {:params {:x [:some-data
+                                        {:friends [{:name "Monica"}
+                                                   {:name "Ross"}]}]}}))
       "MONICA" "{{ x.last['friends'].first['name'] | upcase }}"
-      "Ro" "{{ x[1]['friends'][1]['name'] | remove: 's' }}")
-
-    (try
-      (render "Hello {{ z }}!")
-      (catch Exception e
-        (is (= (ex-data e) {::parser/undefined-variable "z"})))))
+      "Ro" "{{ x[1]['friends'][1]['name'] | remove: 's' }}"))
 
   (testing "control flow"
-    (are [expected template] (= expected (render template {"a" 42 "b" false}))
+    (are [expected template]
+      (= expected (render template {:params {"a" 42 "b" false}}))
       "ok" (str "{% if a %}"
                 "ok"
                 "{% else %}"
@@ -65,13 +64,13 @@
 
   (testing "iteration"
     (are [expected template]
-      (= expected (render template {"xs" (range 1 6)
-                                    "friends" ["Chandler"
-                                               "Joey"
-                                               "Monica"
-                                               "Phoebe"
-                                               "Rachel"
-                                               "Ross"]}))
+      (= expected (render template {:params {"xs" (range 1 6)
+                                             "friends" ["Chandler"
+                                                        "Joey"
+                                                        "Monica"
+                                                        "Phoebe"
+                                                        "Rachel"
+                                                        "Ross"]}}))
       "12345" (str "{% for x in xs %}"
                    "{{ x }}"
                    "{% endfor %}")
@@ -92,4 +91,22 @@
                                           "{% continue %}"
                                           "{% endif %}"
                                           "{{ f }} "
-                                          "{% endfor %}"))))
+                                          "{% endfor %}")))
+
+  (testing "template analysis"
+    (are [template expected]
+      (->> template
+           (parser/parse-and-transform)
+           (parser/analyze)
+           ((juxt :core-filters :custom-filters :lookups))
+           (= expected))
+      "Plain text"
+      [#{} #{} #{}]
+
+      "Hello {{ name | capitalize | my_filter }}"
+      [#{"capitalize"} #{"my_filter"} #{"name"}]
+
+      (str "{% for i in (x..y) %}"
+           "{{ i | plus: 10 }}"
+           "{% endfor %}")
+      [#{"plus"} #{} #{"i" "x" "y"}])))
