@@ -93,6 +93,14 @@
                                           "{{ f }} "
                                           "{% endfor %}")))
 
+  (testing "raw"
+    (are [expected template]
+      (= expected (render template {:params {:greeting "Hello" :who "World"}}))
+      "Hello {{ x }}" (str "{{ greeting }} "
+                           "{% raw %}"
+                           "{{ x }}"
+                           "{% endraw %}")))
+
   (testing "template analysis"
     (are [template expected]
       (->> template

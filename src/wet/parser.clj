@@ -106,7 +106,10 @@
    :continue nodes/->Continue
    :range-start identity
    :range-end identity
-   :range nodes/->Range})
+   :range nodes/->Range
+   ;; Raw
+   :raw-block identity
+   :raw-body identity})
 
 (defn- transform
   [template]

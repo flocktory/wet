@@ -1,7 +1,6 @@
 (* COMMON *)
 
-template ::= (b* object-expr-block* tag-expression*)*
-template ::= (b | object-expr-block | tag-expression)*
+template ::= (b / raw-block / object-expr-block / tag-expression)*
 <body> ::= template
 b ::= #'(?s)((?!\{\{|\{\%).)*'
 s ::= #'[\s\n\r]*'
@@ -13,6 +12,9 @@ squote ::= '\''
 <rparen> ::= <s> ')' <s>
 <lbrace> ::= <s> '[' <s>
 <rbrace> ::= <s> ']' <s>
+
+raw-body ::= #'(?s)((?!\{\%\s*endraw\s*%}).)*'
+raw-block ::= ltag <'raw'> rtag raw-body ltag <'endraw'> rtag
 
 <token> ::= #'[a-zA-Z-_][a-zA-Z0-9-_]*'
 bool ::= 'true' | 'false'
