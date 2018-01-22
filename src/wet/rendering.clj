@@ -55,9 +55,11 @@
         (cond
           (instance? Filter f) (apply-filter f res context)
           (instance? CollIndex f) (let [key (:key f)]
-                                    (if (sequential? res)
-                                      (when (integer? key) (get res key))
-                                      (get (walk/stringify-keys res) key)))))
+                                    (cond
+                                      (not (sequential? res)) (get (walk/stringify-keys res) key)
+                                      (integer? key) (get res key)
+                                      (= "last" key) (last res)
+                                      (= "first" key) (first res)))))
       (get-in context [:params var-name])
       (:fns node))))
 

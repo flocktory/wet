@@ -47,8 +47,6 @@
 
 (defn- parse-filter [name & args] (nodes/->Filter name args))
 
-(defn- parse-inline-filter [name] (nodes/->Filter name nil))
-
 (defn- parse-for-opts
   [& nodes]
   (letfn [(find-node [t] (first (filter (partial instance? t) nodes)))]
@@ -80,7 +78,6 @@
    :lookup parse-lookup
    :object-expr parse-object-expr
    :filter parse-filter
-   :inline-filter parse-inline-filter
    :index nodes/->CollIndex
    ;; Assignment
    :capture nodes/->Capture

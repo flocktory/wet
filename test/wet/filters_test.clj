@@ -269,7 +269,13 @@
   (testing "url_encode"
     (are [expected template] (= expected (render template))
       "john%40liquid.com" "{{ \"john@liquid.com\" | url_encode }}"
-      "Tetsuro+Takara" "{{ \"Tetsuro Takara\" | url_encode }}")))
+      "Tetsuro+Takara" "{{ \"Tetsuro Takara\" | url_encode }}"))
+
+  (testing
+    (are [expected template assigns] (= expected (render template {:params assigns}))
+      "2" "{{ a.b }}" {:a {:b 2}}
+      "3" "{{ a['b'] }}" {:a {:b 3}}
+      "4" "{{ a[1] }}" {:a [nil 4 5]})))
 
 (deftest custom-filter-test
   (let [params {:params {:s "liquid"}
