@@ -31,9 +31,8 @@ dq-str-escape ::= #'\\*\\"'
 
 string ::= sq-string | dq-string
 
-index ::= <lbrace> (int | string) <rbrace>
-inline-filter ::= <'.'> token
-lookup ::= token (index* inline-filter*)*
+index ::= <lbrace> (int | string) <rbrace> | <'.'> token
+lookup ::= token index*
 
 <object> ::= bool / int / float / string / lookup
 
