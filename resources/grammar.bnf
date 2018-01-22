@@ -33,7 +33,7 @@ dq-str-escape ::= #'\\*\\"'
 
 string ::= sq-string | dq-string
 
-index ::= <lbrace> (int | string) <rbrace> | <'.'> token
+index ::= <lbrace> (int | string | lookup) <rbrace> | <'.'> token
 lookup ::= token index*
 
 <object> ::= bool / int / float / string / lookup

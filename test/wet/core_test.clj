@@ -1,4 +1,4 @@
-(ns wet.parser-test
+(ns wet.core-test
   (:require [clojure.test :refer :all]
             [wet.parser :as parser]
             [wet.test-utils :refer [render]]))
@@ -33,9 +33,11 @@
       (= expected (render template
                           {:params {:x [:some-data
                                         {:friends [{:name "Monica"}
-                                                   {:name "Ross"}]}]}}))
+                                                   {:name "Ross"}]}]
+                                    :attr :name
+                                    :n 1}}))
       "MONICA" "{{ x.last['friends'].first['name'] | upcase }}"
-      "Ro" "{{ x[1]['friends'][1]['name'] | remove: 's' }}"))
+      "Ro" "{{ x[1]['friends'][n][attr] | remove: 's' }}"))
 
   (testing "control flow"
     (are [expected template]

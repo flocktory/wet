@@ -54,12 +54,17 @@
       (fn [res f]
         (cond
           (instance? Filter f) (apply-filter f res context)
-          (instance? CollIndex f) (let [key (:key f)]
-                                    (cond
-                                      (not (sequential? res)) (get (walk/stringify-keys res) key)
-                                      (integer? key) (get res key)
-                                      (= "last" key) (last res)
-                                      (= "first" key) (first res)))))
+
+          (instance? CollIndex f)
+          (let [key (if (instance? Lookup (:key f))
+                      (-> (resolve-lookup (:key f) context)
+                          (as-> v* (cond-> v* (keyword? v*) name)))
+                      (:key f))]
+            (cond
+              (not (sequential? res)) (get (walk/stringify-keys res) key)
+              (utils/safe-long key) (get (vec res) (utils/safe-long key))
+              (= "last" key) (last res)
+              (= "first" key) (first res)))))
       (get-in context [:params var-name])
       (:fns node))))
 
