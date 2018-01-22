@@ -1,6 +1,15 @@
 (ns wet.utils
   (:import (java.util Date)))
 
+(defn safe-long
+  [v]
+  (try
+    (cond
+      (number? v) (.longValue v)
+      :else (Long/valueOf v))
+    (catch IllegalArgumentException _ nil)
+    (catch NumberFormatException _ nil)))
+
 (defn safe-num
   [v]
   (cond
