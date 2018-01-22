@@ -1,11 +1,12 @@
 (ns wet.parser
-  (:require [instaparse.core :as insta]
+  (:require [clojure.java.io :as io]
+            [instaparse.core :as insta]
             [wet.filters :as filters]
             [wet.parser.nodes :as nodes])
   (:import (wet.parser.nodes Condition Else Filter ForLimit ForOffset
                              ForReversed Lookup When)))
 
-(def ^:private parse (insta/parser "resources/grammar.bnf"))
+(def ^:private parse (insta/parser (io/resource "grammar.bnf")))
 
 (defn- parse-template [& nodes] (nodes/->Template nodes))
 
