@@ -28,7 +28,9 @@
     (are [expected template] (= expected (render template))
       "2" "{{ 1.2 | ceil }}"
       "2" "{{ 2.0 | ceil }}"
-      "4" "{{ \"3.5\" | ceil }}"))
+      "4" "{{ \"3.5\" | ceil }}"
+      "1" "{{ 1 | ceil }}"
+      "" "{{ x | ceil }}"))
 
   (testing "compact"
     (is (= "1 2 3 4 " (render (str "{% assign compacted = xs | compact %}"
@@ -177,7 +179,10 @@
     (are [expected template] (= expected (render template))
       "1" "{{ 1.2 | round }}"
       "3" "{{ 2.7 | round }}"
-      "183.36" "{{ 183.357 | round: 2 }}"))
+      "183.36" "{{ 183.357 | round: 2 }}"
+      "2" "{{ 2 | round: 1 }}"
+      "2" "{{ '2' | round: 1 }}"
+      "" "{{ x | round: 1 }}"))
 
   (testing "rstrip"
     (are [expected template] (= expected (render template))

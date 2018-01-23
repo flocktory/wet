@@ -49,23 +49,23 @@
 
 (defn- resolve-lookup
   [node context]
-  (let [var-name (:name node)]
+  (letfn [(->?vec [v] (cond-> v (sequential? v) (vec)))]
     (reduce
       (fn [res f]
-        (cond
-          (instance? Filter f) (apply-filter f res context)
-
-          (instance? CollIndex f)
-          (let [key (if (instance? Lookup (:key f))
-                      (-> (resolve-lookup (:key f) context)
-                          (as-> v* (cond-> v* (keyword? v*) name)))
-                      (:key f))]
-            (cond
-              (not (sequential? res)) (get (walk/stringify-keys res) key)
-              (utils/safe-long key) (get (vec res) (utils/safe-long key))
-              (= "last" key) (last res)
-              (= "first" key) (first res)))))
-      (get-in context [:params var-name])
+        (let [v (->?vec res)]
+          (cond
+            (instance? Filter f) (apply-filter f v context)
+            (instance? CollIndex f)
+            (let [key (if (instance? Lookup (:key f))
+                        (-> (resolve-lookup (:key f) context)
+                            (as-> v* (cond-> v* (keyword? v*) name)))
+                        (:key f))]
+              (cond
+                (not (sequential? v)) (get v key)
+                (utils/safe-long key) (get v (utils/safe-long key))
+                (= "last" key) (last v)
+                (= "first" key) (first v))))))
+      (-> context (get-in [:params (:name node)]) walk/stringify-keys ->?vec)
       (:fns node))))
 
 (defn- resolve-object-expr

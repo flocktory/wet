@@ -133,7 +133,7 @@
    from another object."
   [v key]
   (when (and (sequential? v) (every? map? v))
-    (clojure.core/map
+    (mapv
       (fn [el] (get (walk/stringify-keys el) (utils/safe-str key)))
       v)))
 
@@ -196,9 +196,11 @@
   ([v] (round v 0))
   ([v p]
     (when-let [v* (utils/safe-num v)]
-      (let [formatted (format (str "%." p "f") v*)]
-        (cond-> (Float. formatted)
-          (zero? p) int)))))
+      (if (integer? v*)
+        v*
+        (let [formatted (format (str "%." p "f") v*)]
+          (cond-> (Float. formatted)
+            (zero? p) int))))))
 
 (deffilter rstrip
   "Removes all whitespace (tabs, spaces, and newlines) from the right side
