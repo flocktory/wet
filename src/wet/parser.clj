@@ -35,13 +35,9 @@
   ([operand1 operator operand2]
    (nodes/->Assertion (:value operator) [operand1 operand2])))
 
-(defn- parse-or
-  ([pred] pred)
-  ([pred1 pred2] (nodes/->PredicateOr pred1 pred2)))
+(defn- parse-or [& predicates] (nodes/->PredicateOr predicates))
 
-(defn- parse-and
-  ([pred] pred)
-  ([pred1 pred2] (nodes/->PredicateAnd pred1 pred2)))
+(defn- parse-and [& predicates] (nodes/->PredicateAnd predicates))
 
 (defn- parse-object-expr [obj & filters] (nodes/->ObjectExpr obj filters))
 

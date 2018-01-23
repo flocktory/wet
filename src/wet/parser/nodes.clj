@@ -76,13 +76,13 @@
   Parent
   (children [_] [value]))
 
-(defrecord PredicateAnd [pred1 pred2]
+(defrecord PredicateAnd [predicates]
   Parent
-  (children [_] [pred1 pred2]))
+  (children [_] predicates))
 
-(defrecord PredicateOr [pred1 pred2]
+(defrecord PredicateOr [predicates]
   Parent
-  (children [_] [pred1 pred2]))
+  (children [_] predicates))
 
 (defrecord Range [start end]
   Parent

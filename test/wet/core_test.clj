@@ -41,7 +41,10 @@
 
   (testing "control flow"
     (are [expected template]
-      (= expected (render template {:params {"a" 42 "b" false}}))
+      (= expected (render template {:params {"a" 42
+                                             "b" false
+                                             "c" 23
+                                             "d" [4 8 15 16]}}))
       "ok" (str "{% if a %}"
                 "ok"
                 "{% else %}"
@@ -49,9 +52,9 @@
                 "{% endif %}")
       "ok" (str "{% if b %}"
                 "not ok"
-                "{% elsif a == 43 %}"
+                "{% elsif a == 43 or z %}"
                 "not ok"
-                "{% elsif a < 100 %}"
+                "{% elsif a < 100 and a > c and d contains 4 %}"
                 "ok"
                 "{% endif %}")
       "ok" (str "{% unless b %}"
