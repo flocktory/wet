@@ -1,4 +1,4 @@
-(defproject superkonduktr/wet "0.1.5-SNAPSHOT"
+(defproject superkonduktr/wet "0.1.5"
   :description "Liquid in Clojure"
   :url "https://github.com/superkonduktr/wet"
   :license {:name "Eclipse Public License"
