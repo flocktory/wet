@@ -10,13 +10,13 @@ built on top of [Instaparse](https://github.com/Engelberg/instaparse).
 #### Leiningen/Boot
 
 ```
-[superkonduktr/wet "0.1.5"]
+[superkonduktr/wet "0.1.6"]
 ```
 
 #### CLI
 
 ```clojure
-{:deps {superkonduktr/wet {:mvn/version "0.1.5"}}}
+{:deps {superkonduktr/wet {:mvn/version "0.1.6"}}}
 ```
 
 ## Usage
