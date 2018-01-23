@@ -16,11 +16,17 @@
                           "world"
                           "{% endcapture %}"
                           "Hello {{ bar }}!")
-      "41 43" (str "{% decrement foo %}"
-                   "{{ foo }} "
-                   "{% increment foo %}"
-                   "{% increment foo %}"
-                   "{{ foo }}")))
+      "-1 42 0 1 42" (str "{% decrement foo %} "
+                          "{{ foo }} "
+                          "{% increment foo %} "
+                          "{% increment foo %} "
+                          "{{ foo }}")
+      "5! = 120" (str "{% assign r = 1 %}"
+                      "{% assign n = 5 %}"
+                      "{% for i in (2..n) %}"
+                      "{% assign r = r | times: i %}"
+                      "{% endfor %}"
+                      "{{ n }}! = {{ r }}")))
 
   (testing "objects"
     (are [expected template]

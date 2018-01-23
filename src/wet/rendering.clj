@@ -65,7 +65,11 @@
                 (utils/safe-long key) (get v (utils/safe-long key))
                 (= "last" key) (last v)
                 (= "first" key) (first v))))))
-      (-> context (get-in [:params (:name node)]) walk/stringify-keys ->?vec)
+      (-> (if (contains? (:params context) (:name node))
+            (get-in context [:params (:name node)])
+            (get @(::global-scope context) (:name node)))
+          (walk/stringify-keys)
+          (->?vec))
       (:fns node))))
 
 (defn- resolve-object-expr
@@ -150,9 +154,11 @@
           (recur (str res item*) (rest coll))))
       res)))
 
-(defn- update-counter
-  [node context f]
-  ["" (update-in context [:params (:var node)] f)])
+(defn- update-counter!
+  [node context f init]
+  (let [v (f (get-in @(::global-scope context) [::counters (:var node)] init))]
+    (swap! (::global-scope context) assoc-in [::counters (:var node)] v)
+    [(str v) context]))
 
 (defmulti eval-node (fn [node _] (type node)))
 
@@ -192,20 +198,22 @@
 (defmethod eval-node Assign
   [node context]
   (let [[v _] (eval-node (:value node) context)]
-    ["" (assoc-in context [:params (:var node)] v)]))
+    (swap! (::global-scope context) assoc (:var node) v)
+    ["" context]))
 
 (defmethod eval-node Capture
   [node context]
   (let [[template _] (eval-node (:template node) context)]
-    ["" (assoc-in context [:params (:var node)] template)]))
+    (swap! (::global-scope context) assoc (:var node) template)
+    ["" context]))
 
 (defmethod eval-node Increment
   [node context]
-  (update-counter node context inc))
+  (update-counter! node context inc -1))
 
 (defmethod eval-node Decrement
   [node context]
-  (update-counter node context dec))
+  (update-counter! node context dec 0))
 
 (defmethod eval-node Break
   [_ _]
@@ -217,4 +225,6 @@
 
 (defn eval-template
   [template-node context]
-  (eval-node template-node context))
+  (->> (assoc context ::global-scope (atom {}))
+       (eval-node template-node)
+       (first)))
