@@ -11,12 +11,14 @@
     (catch NumberFormatException _ nil)))
 
 (defn safe-num
-  [v]
-  (cond
-    (number? v) v
-    (string? v) (cond
-                  (re-find #"^-?\d+$" v) (Long. v)
-                  (re-find #"^-?(\d+\.\d*|\d*\.\d+)$" v) (Float. v))))
+  ([v] (safe-num v nil))
+  ([v fb]
+   (or (cond
+         (number? v) v
+         (string? v) (cond
+                       (re-find #"^-?\d+$" v) (Long. v)
+                       (re-find #"^-?(\d+\.\d*|\d*\.\d+)$" v) (Double. v)))
+       fb)))
 
 (defn safe-date
   [v]
