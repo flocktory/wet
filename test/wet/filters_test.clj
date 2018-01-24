@@ -58,9 +58,11 @@
 
   (testing "divided_by"
     (are [expected template] (= expected (render template))
-      "4" "{{ 16 | divided_by: 4 }}"
-      "1" "{{ 5 | divided_by: 3 }}"
-      "2.857142857142857" "{{ 20 | divided_by: 7.0 }}"))
+      "4" "{{ \"16\" | divided_by: 4 }}"
+      "1" "{{ 5 | divided_by: \"5\" }}"
+      "2.857142857142857" "{{ 20 | divided_by: 7.0 }}"
+      "0" "{{ a | divided_by: \"5\" }}"
+      "0" "{{ 5 | divided_by: a }}"))
 
   (testing "downcase"
     (are [expected template] (= expected (render template))
@@ -119,8 +121,11 @@
 
   (testing "minus"
     (are [expected template] (= expected (render template))
-      "12" "{{ 16 | minus: 4 }}"
-      "171.357" "{{ 183.357 | minus: 12 }}"))
+      "12" "{{ \"16\" | minus: 4 }}"
+      "171.357" "{{ 183.357 | minus: \"12\" }}"
+      "3" "{{ 3 | minus: a }}"
+      "-3" "{{ a | minus: 3 }}"
+      "0" "{{ a | minus: b }}"))
 
   (testing "modulo"
     (are [expected template] (= expected (render template))
@@ -139,7 +144,8 @@
   (testing "plus"
     (are [expected template] (= expected (render template))
       "6" "{{ 4 | plus: 2 }}"
-      "195.357" "{{ 183.357 | plus: 12 }}"))
+      "6" "{{ \"4\" | plus: 2 }}"
+      "195.357" "{{ 183.357 | plus: \"12\" }}"))
 
   (testing "prepend"
     (are [expected template] (= expected (render template))
@@ -242,8 +248,9 @@
 
   (testing "times"
     (are [expected template] (= expected (render template))
-      "6" "{{ 3 | times: 2 }}"
-      "2200.284" "{{ 183.357 | times: 12 }}"))
+      "6" "{{ 3 | times: \"2\" }}"
+      "2200.284" "{{ \"183.357\" | times: 12 }}"
+      "0" "{{ 3 | times: a }}"))
 
   (testing "truncate"
     (are [expected template] (= expected (render template))
@@ -276,7 +283,7 @@
       "john%40liquid.com" "{{ \"john@liquid.com\" | url_encode }}"
       "Tetsuro+Takara" "{{ \"Tetsuro Takara\" | url_encode }}"))
 
-  (testing
+  (testing "coll_index"
     (are [expected template assigns] (= expected (render template {:params assigns}))
       "2" "{{ a.b }}" {:a {:b 2}}
       "3" "{{ a['b'] }}" {:a {:b 3}}

@@ -64,8 +64,12 @@
    The result is rounded down to the nearest integer (that is, the floor)
    if the divisor is an integer."
   [v divisor]
-  (when-let [v* (utils/safe-num v)]
-    (if (every? integer? [v* divisor]) (quot v* divisor) (/ v* divisor))))
+  (let [v* (utils/safe-num v)
+        d* (utils/safe-num divisor)]
+    (cond
+      (every? integer? [v* d*]) (quot v* d*)
+      (every? number? [v* d*]) (/ v* d*)
+      :else "0")))
 
 (deffilter downcase
   "Makes each character in a string lowercase."
@@ -140,7 +144,7 @@
 (deffilter minus
   "Subtracts a number from another number."
   [v n]
-  (some-> v utils/safe-num (- n)))
+  (- (utils/safe-num v 0) (utils/safe-num n 0)))
 
 (deffilter modulo
   "Returns the remainder of a division operation."
@@ -154,9 +158,8 @@
 
 (deffilter plus
   "Adds a number to another number."
-  [v & ns]
-  (when-let [v* (utils/safe-num v)]
-    (apply (partial + v*) ns)))
+  [& args]
+  (apply + (clojure.core/map #(utils/safe-num % 0) args)))
 
 (deffilter prepend
   "Adds the specified string to the beginning of another string."
@@ -263,9 +266,8 @@
 
 (deffilter times
   "Multiplies a number by another number."
-  [v & ns]
-  (when-let [v* (utils/safe-num v)]
-    (apply (partial * v*) ns)))
+  [& args]
+  (apply * (clojure.core/map #(utils/safe-num % 0) args)))
 
 (deffilter truncate
   "Shortens a string down to the number of characters passed as a parameter.
