@@ -154,7 +154,7 @@
 (deffilter newline-to-br
   "Replaces every newline (\\n) with an HTML line break (<br>)."
   [v]
-  (str/replace v "\n" "<br>"))
+  (-> v str (str/replace "\n" "<br>")))
 
 (deffilter plus
   "Adds a number to another number."
