@@ -118,7 +118,7 @@
           (if (eval-pred* condition)
             (eval-template* condition)
             (recur (rest conditions*)))
-          (some-> (:else node) eval-template* first))))))
+          (some-> (:else node) :template (eval-node context) first))))))
 
 (defn- eval-case
   [node context]

@@ -56,6 +56,11 @@
                 "{% else %}"
                 "not ok"
                 "{% endif %}")
+      "ok" (str "{% if a < 15 %}"
+                "not ok"
+                "{% else %}"
+                "ok"
+                "{% endif %}")
       "ok" (str "{% if b %}"
                 "not ok"
                 "{% elsif a == 43 or z %}"
@@ -71,7 +76,13 @@
                 "not ok"
                 "{% when 42 %}"
                 "ok"
-                "{% endcase %}")))
+                "{% endcase %}")
+      "a = 52" (str "{% case a %}"
+                    "{% when 41 %}"
+                    "not ok"
+                    "{% else %}"
+                    "a = {{ a | plus: 10 }}"
+                    "{% endcase %}")))
 
   (testing "iteration"
     (are [expected template]
