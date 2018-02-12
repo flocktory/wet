@@ -102,7 +102,8 @@
       (i? Lookup) (resolve-lookup node context)
       (i? Assertion) (eval-assertion node context)
       (i? PredicateOr) (some #(eval-predicate % context) (:predicates node))
-      (i? PredicateAnd) (every? #(eval-predicate % context) (:predicates node)))))
+      (i? PredicateAnd) (every? #(eval-predicate % context) (:predicates node))
+      :else node)))
 
 (defn- eval-condition-expr
   [node context]
