@@ -226,6 +226,12 @@
       (str "{% assign beatles = \"John, Paul, George, Ringo\" | split: \", \" %}"
            "{% for member in beatles %}"
            "{{ member }} "
+           "{% endfor %}")
+
+      "John Paul George Ringo "
+      (str "{% assign beatles = 'John|Paul|George|Ringo' | split: '|' %}"
+           "{% for member in beatles %}"
+           "{{ member }} "
            "{% endfor %}")))
 
   (testing "strip"

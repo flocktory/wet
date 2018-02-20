@@ -4,7 +4,8 @@
              [string :as str]
              [walk :as walk]]
             [wet.utils :as utils])
-  (:import (java.net URLDecoder URLEncoder)))
+  (:import (java.net URLDecoder URLEncoder)
+           (java.util.regex Pattern)))
 
 (defmacro deffilter
   [name & body]
@@ -246,7 +247,7 @@
 (deffilter split
   "Divides an input string into an array using the argument as a separator."
   [v separator]
-  (str/split (str v) (re-pattern (str separator))))
+  (str/split (str v) (re-pattern (Pattern/quote (str separator)))))
 
 (deffilter strip
   "Removes all whitespace (tabs, spaces, and newlines) from both the left and
