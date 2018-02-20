@@ -140,20 +140,39 @@
 
 (defn- eval-for
   [{:keys [var collection for-opts template]} context]
-  (loop [res ""
-         coll (->> (resolve-object collection context)
-                   (apply-for-opts for-opts))]
-    (if-let [item (first coll)]
-      (let [item* (try
-                    (first
-                      (eval-node template (assoc-in context [:params var] item)))
-                    (catch Exception e
-                      (or (::iteration (ex-data e)) (throw e))))]
-        (case item*
-          ::break res
-          ::continue (recur res (rest coll))
-          (recur (str res item*) (rest coll))))
-      res)))
+  (let [coll (->> (resolve-object collection context)
+                   (apply-for-opts for-opts))
+        length (count coll)]
+    (loop [res ""
+           coll* coll
+           forloop {:index 1
+                    :index0 0
+                    :rindex length
+                    :rindex0 (dec length)
+                    :length length
+                    :first true
+                    :last (> 2 length)}]
+      (if-let [item (first coll*)]
+        (let [index (:index forloop)
+              context* (-> context
+                           (assoc-in [:params var] item)
+                           (assoc-in [:params "forloop"] forloop))
+              item* (try
+                      (first (eval-node template context*))
+                      (catch Exception e
+                        (or (::iteration (ex-data e)) (throw e))))
+              forloop* (-> forloop
+                           (update :index inc)
+                           (update :index0 inc)
+                           (update :rindex dec)
+                           (update :rindex0 dec)
+                           (assoc :first false)
+                           (assoc :last (>= (inc index) length)))]
+          (case item*
+            ::break res
+            ::continue (recur res (rest coll*) forloop*)
+            (recur (str res item*) (rest coll*) forloop*)))
+        res))))
 
 (defn- update-counter!
   [node context f init]

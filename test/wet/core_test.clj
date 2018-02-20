@@ -113,7 +113,22 @@
                                           "{% continue %}"
                                           "{% endif %}"
                                           "{{ f }} "
-                                          "{% endfor %}")))
+                                          "{% endfor %}"))
+
+    (testing "forloop"
+      (letfn [(->template [var]
+                (str "{% for i in " var " %}"
+                     "| {{ i }} | {{ forloop.length }} "
+                     "{{ forloop.first }} {{ forloop.last }} "
+                     "{{ forloop.index }} {{ forloop.index0 }} "
+                     "{{ forloop.rindex }} {{ forloop.rindex0 }} "
+                     "{% endfor %}"))]
+        (are [var expected]
+          (= expected (render (->template var)
+                              {:params {"xs" ["a" "b" "c"] "ys" ["d"]}}))
+          "xs" "| a | 3 true false 1 0 3 2 | b | 3 false false 2 1 2 1 | c | 3 false true 3 2 1 0 "
+          "ys" "| d | 1 true true 1 0 1 0 "
+          "empty" ""))))
 
   (testing "raw"
     (are [expected template]
