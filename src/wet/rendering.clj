@@ -63,6 +63,7 @@
               (cond
                 (not (sequential? v)) (get v key)
                 (utils/safe-long key) (get v (utils/safe-long key))
+                (= "size" key) (count v)
                 (= "last" key) (last v)
                 (= "first" key) (first v))))))
       (-> (if (contains? (:params context) (:name node))
