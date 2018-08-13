@@ -1,66 +1,52 @@
 (ns wet.filters
   (:refer-clojure :exclude [first last map remove replace reverse sort])
-  (:require [clojure
-             [string :as str]
-             [walk :as walk]]
-            [wet.utils :as utils])
-  (:import (java.net URLDecoder URLEncoder)
-           (java.util.regex Pattern)))
+  (:require [clojure.string :as str]
+            [clojure.walk :as walk]
+            [wet.impl.utils :as utils])
+  #?(:clj (:import (java.net URLDecoder URLEncoder)
+                   (java.util.regex Pattern))))
 
-(defmacro deffilter
-  [name & body]
-  (let [doc (when (string? (clojure.core/first body)) (clojure.core/first body))
-        meta {:doc doc ::liquid-name (-> name (str) (str/replace "-" "_"))}
-        [args & body*] (if doc (rest body) body)]
-    `(defn ~name ~meta ~args ~@body*)))
-
-(defn find-by-name
-  [s]
-  (->> (ns-publics 'wet.filters)
-       (vals)
-       (filter (comp (partial = s) ::liquid-name meta))
-       (clojure.core/first)))
-
-(deffilter abs
+(defn abs
   "Returns the absolute value of a number."
   [v]
   (some-> v utils/safe-num Math/abs))
 
-(deffilter append
+(defn append
   [v & args]
   "Concatenates two strings and returns the concatenated value."
   (apply (partial str v) args))
 
-(deffilter capitalize
+(defn capitalize
   "Makes the first character of a string capitalized."
   [v]
-  (-> v str str/capitalize))
+  (str/capitalize (str v)))
 
-(deffilter ceil
+(defn ceil
   "Rounds the input up to the nearest whole number. Liquid tries to convert
    the input to a number before the filter is applied."
   [v]
   (some-> v utils/safe-num Math/ceil int))
 
-(deffilter compact
+(defn compact
   "Removes any nil values from a collection."
   [v]
   (when (sequential? v) (clojure.core/remove nil? v)))
 
-(deffilter date
+(defn date
   "Converts a timestamp into another date format. The format for the syntax
    is the same as strftime."
   [v fmt]
-  (when-let [d (utils/safe-date v)]
-    (let [fmt* (str/replace fmt #"%([a-zA-Z])" "%1\\$t$1")]
-      (format fmt* d))))
+  (when-let [date (utils/safe-date v)]
+    #?(:clj (format (str/replace fmt #"%([a-zA-Z])" "%1\\$t$1") date)
+       ;; TODO: js strftime
+       :cljs (.toISOString date))))
 
-(deffilter default
+(defn default
   "Allows you to specify a fallback in case a value doesn’t exist."
   [v fallback]
   (or (if (or (string? v) (coll? v)) (not-empty v) v) fallback))
 
-(deffilter divided-by
+(defn divided-by
   "Divides a number by the specified number.
    The result is rounded down to the nearest integer (that is, the floor)
    if the divisor is an integer."
@@ -72,7 +58,7 @@
       (every? number? [v* d*]) (/ v* d*)
       :else "0")))
 
-(deffilter downcase
+(defn downcase
   "Makes each character in a string lowercase."
   [v]
   (some-> v str str/lower-case))
@@ -84,14 +70,14 @@
    \" "&quot;"
    \' "&#39;"})
 
-(deffilter escape
+(defn escape
   "Escapes a string by replacing characters with escape sequences
    (so that the string can be used in a URL, for example). It doesn’t change
    strings that don’t have anything to escape."
   [v]
   (some-> v (str/escape HTML-ESCAPE)))
 
-(deffilter escape-once
+(defn escape-once
   "Escapes a string without changing existing escaped entities. It doesn’t
    change strings that don’t have anything to escape."
   [v]
@@ -103,37 +89,37 @@
         replacement
         match))))
 
-(deffilter first
+(defn first
   "Returns the first item of a collection."
   [v]
   (when (or (string? v) (sequential? v))
     (clojure.core/first v)))
 
-(deffilter floor
+(defn floor
   "Rounds a number down to the nearest whole number. Liquid tries to convert
    the input to a number before the filter is applied."
   [v]
   (some-> v utils/safe-num Math/floor int))
 
-(deffilter join
+(defn join
   "Combines the items in an array into a single string using the argument as
    a separator."
   [v separator]
   (when (sequential? v) (str/join separator v)))
 
-(deffilter last
+(defn last
   "Returns the last item of a collection."
   [v]
   (when (or (string? v) (sequential? v))
     (clojure.core/last v)))
 
-(deffilter lstrip
+(defn lstrip
   "Removes all whitespaces (tabs, spaces, and newlines) from the beginning
    of a string. The filter does not affect spaces between words."
   [v]
-  (-> v str str/triml))
+  (str/triml (str v)))
 
-(deffilter map
+(defn map
   "Creates a collection of values by extracting the values of a named property
    from another object."
   [v key]
@@ -142,83 +128,84 @@
       (fn [el] (get (walk/stringify-keys el) (utils/safe-str key)))
       v)))
 
-(deffilter minus
+(defn minus
   "Subtracts a number from another number."
   [v n]
   (- (utils/safe-num v 0) (utils/safe-num n 0)))
 
-(deffilter modulo
+(defn modulo
   "Returns the remainder of a division operation."
   [v n]
   (some-> v utils/safe-num (mod n)))
 
-(deffilter newline-to-br
+(defn newline-to-br
   "Replaces every newline (\\n) with an HTML line break (<br>)."
   [v]
-  (-> v str (str/replace "\n" "<br>")))
+  (str/replace (str v) "\n" "<br>"))
 
-(deffilter plus
+(defn plus
   "Adds a number to another number."
   [& args]
   (apply + (clojure.core/map #(utils/safe-num % 0) args)))
 
-(deffilter prepend
+(defn prepend
   "Adds the specified string to the beginning of another string."
   [v s]
   (str s v))
 
-(deffilter remove
+(defn remove
   "Removes every occurrence of the specified substring from a string."
   [v s]
-  (-> v str (str/replace s "")))
+  (str/replace (str v) s ""))
 
-(deffilter remove-first
+(defn remove-first
   "Removes only the first occurrence of the specified substring from a string."
   [v s]
-  (-> v str (str/replace-first s "")))
+  (str/replace-first (str v) s ""))
 
-(deffilter replace
+(defn replace
   "Replaces every occurrence of an argument in a string with the second
    argument."
   [v match replacement]
   (str/replace v match replacement))
 
-(deffilter replace_first
+(defn replace-first
   "Replaces only the first occurrence of the first argument in a string with
    the second argument."
   [v match replacement]
   (str/replace-first v match replacement))
 
-(deffilter reverse
+(defn reverse
   "Reverses the order of the items in an array."
   [v]
   (when (sequential? v) (clojure.core/reverse v)))
 
-(deffilter round
+(defn round
   "Rounds an input number to the nearest integer or, if a number is specified
    as an argument, to that number of decimal places."
   ([v] (round v 0))
-  ([v p]
+  ([v precision]
     (when-let [v* (utils/safe-num v)]
       (if (integer? v*)
         v*
-        (let [formatted (format (str "%." p "f") v*)]
-          (cond-> (Float. formatted)
-            (zero? p) int))))))
+        #?(:clj (let [formatted (format (str "%." precision "f") v*)]
+                  (cond-> (Float. formatted)
+                    (zero? precision) int))
+           :cljs (utils/safe-num (.toFixed v* precision)))))))
 
-(deffilter rstrip
+(defn rstrip
   "Removes all whitespace (tabs, spaces, and newlines) from the right side
    of a string."
   [v]
-  (-> v str str/trimr))
+  (str/trimr (str v)))
 
-(deffilter size
+(defn size
   "Returns the number of characters in a string or the number of items in
    an array."
   [v]
   (when (or (string? v) (coll? v)) (count v)))
 
-(deffilter slice
+(defn slice
   "Returns a substring of 1 character beginning at the index specified by the
    argument passed in. An optional second argument specifies the length of
    the substring to be returned.
@@ -232,45 +219,46 @@
           end (if (<= (+ start* length) str-length) (+ start* length) str-length)]
       (subs v* start* end))))
 
-(deffilter sort
+(defn sort
   "Sorts items in an array by a property of an item in the array. The order
    of the sorted array is case-sensitive."
   [v]
   (when (sequential? v) (clojure.core/sort v)))
 
-(deffilter sort-natural
+(defn sort-natural
   "Sorts items in an array by a property of an item in the array."
   [v]
   (when (sequential? v)
     (sort-by (comp str/lower-case str) v)))
 
-(deffilter split
+(defn split
   "Divides an input string into an array using the argument as a separator."
   [v separator]
-  (str/split (str v) (re-pattern (Pattern/quote (str separator)))))
+  #?(:clj (str/split (str v) (re-pattern (Pattern/quote (str separator))))
+     :cljs (js->clj (.split (str v) separator))))
 
-(deffilter strip
+(defn strip
   "Removes all whitespace (tabs, spaces, and newlines) from both the left and
    right side of a string. It does not affect spaces between words."
   [v]
-  (-> v str str/trim))
+  (str/trim (str v)))
 
-(deffilter strip-html
+(defn strip-html
   "Removes any HTML tags from a string."
   [v]
-  (-> v str (str/replace #"<\\?.+?>" "")))
+  (str/replace (str v) #"<\\?.+?>" ""))
 
-(deffilter strip-newlines
+(defn strip-newlines
   "Removes any newline characters (line breaks) from a string."
   [v]
-  (-> v str (str/replace #"[\r\n]+" "")))
+  (str/replace (str v) #"[\r\n]+" ""))
 
-(deffilter times
+(defn times
   "Multiplies a number by another number."
   [& args]
   (apply * (clojure.core/map #(utils/safe-num % 0) args)))
 
-(deffilter truncate
+(defn truncate
   "Shortens a string down to the number of characters passed as a parameter.
    If the number of characters specified is less than the length of the string,
    an ellipsis (…) is appended to the string and is included in the character
@@ -282,7 +270,7 @@
         v*
         (-> v* (subs 0 n) (str ellipsis))))))
 
-(deffilter truncatewords
+(defn truncatewords
   "Shortens a string down to the number of words passed as the argument. If
    the specified number of words is less than the number of words in
    the string, an ellipsis (…) is appended to the string."
@@ -294,23 +282,71 @@
                       :finally (str/join " "))]
       (str truncated ellipsis))))
 
-(deffilter uniq
+(defn uniq
   "Removes any duplicate elements in an array."
   [v]
-  (->> v seq distinct))
+  (distinct (seq v)))
 
-(deffilter upcase
+(defn upcase
   "Makes each character in a string uppercase."
   [v]
   (some-> v str str/upper-case))
 
-(deffilter url-decode
+(defn url-decode
   "Decodes a string that has been encoded as a URL."
   [v]
-  (.. URLDecoder (decode (str v) "utf-8")))
+  #?(:clj (.. URLDecoder (decode (str v) "utf-8"))
+     :cljs (js/decodeURI (str v))))
 
-(deffilter url-encode
+(defn url-encode
   "Converts any URL-unsafe characters in a string into percent-encoded
    characters."
   [v]
-  (.. URLEncoder (encode (str v) "utf-8")))
+  #?(:clj (.. URLEncoder (encode (str v) "utf-8"))
+     :cljs (js/encodeURI (str v))))
+
+(def CORE-FILTERS
+  {"abs" abs
+   "append" append
+   "capitalize" capitalize
+   "ceil" ceil
+   "compact" compact
+   "date" date
+   "default" default
+   "divided_by" divided-by
+   "downcase" downcase
+   "escape" escape
+   "escape_once" escape-once
+   "first" first
+   "floor" floor
+   "join" join
+   "last" last
+   "lstrip" lstrip
+   "map" map
+   "minus" minus
+   "modulo" modulo
+   "newline_to_br" newline-to-br
+   "plus" plus
+   "prepend" prepend
+   "remove" remove
+   "remove_first" remove-first
+   "replace" replace
+   "replace_first" replace-first
+   "reverse" reverse
+   "round" round
+   "rstrip" rstrip
+   "size" size
+   "slice" slice
+   "sort" sort
+   "sort_natural" sort-natural
+   "split" split
+   "strip" strip
+   "strip_html" strip-html
+   "strip_newlines" strip-newlines
+   "times" times
+   "truncate" truncate
+   "truncatewords" truncatewords
+   "uniq" uniq
+   "upcase" upcase
+   "url_decode" url-decode
+   "url_encode" url-encode})

@@ -1,12 +1,18 @@
-(ns wet.parser
-  (:require [clojure.java.io :as io]
-            [instaparse.core :as insta]
+(ns wet.impl.parser
+  (:require #?(:cljs [cljs.reader])
+            [instaparse.core :as insta
+             #?@(:clj [:refer [defparser]]
+                 :cljs [:refer-macros [defparser]])]
             [wet.filters :as filters]
-            [wet.parser.nodes :as nodes])
-  (:import (wet.parser.nodes Condition Else Filter ForLimit ForOffset
-                             ForReversed Lookup When)))
+            [wet.impl.parser.grammar :as grammar]
+            [wet.impl.parser.nodes :as nodes
+             #?@(:cljs [:refer [Condition Else Filter ForLimit ForOffset
+                                ForReversed Lookup When]])])
+  #?(:clj (:import (wet.impl.parser.nodes
+                     Condition Else Filter ForLimit ForOffset
+                     ForReversed Lookup When))))
 
-(def ^:private parse (insta/parser (io/resource "grammar.bnf")))
+(defparser parse grammar/GRAMMAR)
 
 (defn- parse-template [& nodes] (nodes/->Template nodes))
 
@@ -58,17 +64,22 @@
 
 (defn- parse-lookup [name & nodes] (nodes/->Lookup name nodes))
 
+(defn- read-string*
+  [s]
+  #?(:clj (read-string s)
+     :cljs (cljs.reader/read-string s)))
+
 (def ^:private transformer
   {:template parse-template
    :b identity
    ;; Data types
-   :int read-string
-   :float read-string
-   :bool read-string
+   :int read-string*
+   :float read-string*
+   :bool read-string*
    :sq-str-set identity
-   :sq-str-escape read-string
+   :sq-str-escape read-string*
    :dq-str-set identity
-   :dq-str-escape read-string
+   :dq-str-escape read-string*
    :string parse-string
    ;; Lookup
    :lookup parse-lookup
@@ -102,7 +113,7 @@
    :continue nodes/->Continue
    :range-start identity
    :range-end identity
-   :range nodes/->Range
+   :range nodes/->IntRange
    ;; Raw
    :raw-block identity
    :raw-body identity})
@@ -117,26 +128,26 @@
     (cond
       (insta/failure? parsed-template)
       (let [{:keys [text line column]} parsed-template
-            error-message (format "Parse error: %s (%s:%s)" text line column)
-            error-context {::error ::parse-error
-                           ::parse-error-line line
-                           ::parse-error-column column
-                           ::parse-error-text text}]
+            error-message (str "Parse error: " text " (" line ":" column ")")
+            error-context {:type :wet/parse-error
+                           :wet.error/line line
+                           :wet.error/column column
+                           :wet.error/text text}]
         (throw (ex-info error-message error-context)))
       :else (transform parsed-template))))
 
-(defn analyze
+(defn analyse
   [transformed-template]
   (let [nodes (->> transformed-template
                    (tree-seq
-                     (partial satisfies? nodes/Parent)
+                     (fn [node] (satisfies? nodes/Parent node))
                      nodes/children))
         lookups (filter (partial instance? Lookup) nodes)
         filters (->> nodes
                      (filter (partial instance? Filter))
                      (map :name)
                      (distinct)
-                     (group-by (comp some? (partial filters/find-by-name))))]
+                     (group-by (partial contains? filters/CORE-FILTERS)))]
     {:lookups (set (map :name lookups))
      :core-filters (set (get filters true))
      :custom-filters (set (get filters false))}))

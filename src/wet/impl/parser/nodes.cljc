@@ -1,4 +1,4 @@
-(ns wet.parser.nodes)
+(ns wet.impl.parser.nodes)
 
 (defprotocol Parent
   (children [this]
@@ -84,7 +84,7 @@
   Parent
   (children [_] predicates))
 
-(defrecord Range [start end]
+(defrecord IntRange [start end]
   Parent
   (children [_] [start end]))
 
