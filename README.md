@@ -1,8 +1,8 @@
-# Wet 💧
+# wet 💧
 
 [![Build Status](https://travis-ci.org/superkonduktr/wet.svg?branch=master)](https://travis-ci.org/superkonduktr/wet)
 
-Wet is a pure Clojure implementation of the [Liquid template language](https://shopify.github.io/liquid/)
+wet is a pure Clojure/ClojureScript port of the [Liquid template language](https://shopify.github.io/liquid/)
 built on top of [Instaparse](https://github.com/Engelberg/instaparse).
 
 ## Installation
@@ -10,47 +10,82 @@ built on top of [Instaparse](https://github.com/Engelberg/instaparse).
 #### Leiningen/Boot
 
 ```
-[superkonduktr/wet "0.1.16"]
+[superkonduktr/wet "0.2.0"]
 ```
 
 #### CLI
 
 ```clojure
-{:deps {superkonduktr/wet {:mvn/version "0.1.16"}}}
+{:deps {superkonduktr/wet {:mvn/version "0.2.0"}}}
 ```
 
 ## Usage
 
-The whole deal:
+In the vein of the [original library](https://github.com/Shopify/liquid),
+wet provides a minimalistic interface comprising `parse` and `render` functions.
+Calling wet from Clojure and ClojureScript is completely identical.
+
+[`wet.core`](https://github.com/superkonduktr/wet/blob/master/src/wet/core.cljc)
+is the only namespace you are going to need.
+
+```clojure
+(:require [wet.core :as wet])
+```
+
+#### An example
+
+Prepare the template:
 
 ```clojure
 (def template
   (str "{{ season | capitalize }} kept us warm, {{ 'cover' | gerund }} "
-       "{{ planet }} in forgetful snow, {{ 'feed' | gerund }} "
+       "{{ planets.habitable[0] }} in forgetful snow, {{ 'feed' | gerund }} "
        "a {{ size }} life with dried tubers."))
-=> #'user/template
 
-(def parsed-template (wet/parse template))
-=> #'user/parsed-template
-
-(wet/render parsed-template {:params {:season "winter"
-                                      :planet "Earth"
-                                      :size "little"}
-                             :filters {:gerund (fn [verb] (str verb "ing"))}})
-=> "Winter kept us warm, covering Earth in forgetful snow, feeding a little life with dried tubers."
+;; An intermediate representation of the parsed template
+(def parsed-template
+  (wet/parse template))
 ```
 
-Request a rudimentary template analysis from parser prior to rendering:
+It may also be convenient to request a rudimentary template analysis
+from the parser prior to rendering with the `:analyse?` option.
+That way, a basic summary of the template's contents can be collected
+from the parsed template's metadata.
 
 ```clojure
-(def parsed-template (wet/parse template {:analyze? true}))
-=> #'user/parsed-template
+(def parsed-template
+  (wet/parse template {:analyse? true}))
+```
 
+```clojure
 (meta parsed-template)
 => {:lookups #{"season" "planet" "size"},
     :core-filters #{"capitalize"},
     :custom-filters #{"gerund"}}
 ```
+
+Finally, obtain the rendered result:
+
+```clojure
+(wet/render
+  parsed-template
+  ;; :params may contain any Clojure data structures
+  {:params {:season "winter"
+            :planets {"habitable" ["Earth" "Mars"]}
+            :size "little"}
+   ;; Any Clojure function of arity one or more may act as a Liquid filter
+   ;; when passed in the :filters map. The first argument is the object
+   ;; being transformed, and the rest is passed to the filter as parameters.
+   ;; For detailed examples on filters please consult wet.filters-test.
+   :filters {:gerund (fn [verb] (str verb "ing"))}})
+```
+
+```clojure 
+=> "Winter kept us warm, covering Earth in forgetful snow, feeding a little life with dried tubers."
+```
+
+The complete list of core Liquid filters can be found in
+[`wet.filters`](https://github.com/superkonduktr/wet/blob/master/src/wet/filters.cljc).
 
 ## Thanks
 

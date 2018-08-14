@@ -1,6 +1,6 @@
 (ns wet.core-test
   (:require [clojure.test :refer :all]
-            [wet.parser :as parser]
+            [wet.impl.parser :as parser]
             [wet.test-utils :refer [render]]))
 
 (deftest parser-test
@@ -142,7 +142,7 @@
     (are [template expected]
       (->> template
            (parser/parse-and-transform)
-           (parser/analyze)
+           (parser/analyse)
            ((juxt :core-filters :custom-filters :lookups))
            (= expected))
       "Plain text"

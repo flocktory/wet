@@ -1,13 +1,17 @@
-(ns wet.rendering
+(ns wet.impl.rendering
   (:require [clojure.walk :as walk]
-            [wet
-             [filters :as filters]
-             [utils :as utils]]
-            [wet.parser.nodes])
-  (:import (wet.parser.nodes Assertion Assign Break Capture Case CollIndex
-                             Continue Decrement Filter For If
-                             Increment Lookup ObjectExpr PredicateAnd
-                             PredicateOr Range Template Unless)))
+            [wet.filters :as filters]
+            [wet.impl.parser.nodes
+             #?@(:cljs [:refer [Assertion Assign Break Capture Case CollIndex
+                                Continue Decrement Filter For If Increment
+                                Lookup ObjectExpr PredicateAnd PredicateOr
+                                IntRange Template Unless]])]
+            [wet.impl.utils :as utils])
+  #?(:clj (:import (wet.impl.parser.nodes
+                     Assertion Assign Break Capture Case CollIndex
+                     Continue Decrement Filter For If Increment
+                     Lookup ObjectExpr PredicateAnd PredicateOr
+                     IntRange Template Unless))))
 
 (declare eval-node)
 (declare resolve-lookup)
@@ -29,7 +33,7 @@
   [node context]
   (if-let [resolver (cond
                       (instance? Lookup node) resolve-lookup
-                      (instance? Range node) resolve-range)]
+                      (instance? IntRange node) resolve-range)]
     (resolver node context)
     node))
 
@@ -37,7 +41,8 @@
   "Looks for a Liquid filter, first in :filters provided by user,
    then in core filters library."
   [context filter-name]
-  (get-in context [:filters filter-name] (filters/find-by-name filter-name)))
+  (or (get-in context [:filters filter-name])
+      (get filters/CORE-FILTERS filter-name)))
 
 (defn- apply-filter
   [{:keys [name args]} s context]
@@ -79,6 +84,9 @@
         v (resolve-object obj context)]
     (reduce (fn [res f] (apply-filter f res context)) v filters)))
 
+(def ^:private NUMERIC-OPERATORS
+  {">" > ">=" >= "<" < "<=" <=})
+
 (defn- eval-assertion
   [node context]
   (let [{:keys [operator operands]} node
@@ -86,15 +94,15 @@
     (case operator
       "==" (apply = operands*)
       "!=" (apply not= operands*)
-      (">" ">=" "<" "<=") (if (every? number? operands*)
-                            (apply (resolve (symbol operator)) operands*)
-                            false)
       "contains" (cond
                    (every? string? operands*)
                    (.contains (first operands*) (second operands*))
                    (sequential? (first operands*))
-                   (some? ((set (first operands*)) (second operands*)))
-                   :else false))))
+                   (contains? (set (first operands*)) (second operands*))
+                   :else false)
+      (when-let [operator* (get NUMERIC-OPERATORS operator)]
+        (when (every? number? operands*)
+          (apply operator* operands*))))))
 
 (defn- eval-predicate
   [node context]
@@ -160,7 +168,7 @@
                            (assoc-in [:params "forloop"] forloop))
               item* (try
                       (first (eval-node template context*))
-                      (catch Exception e
+                      (catch #?(:clj Exception :cljs js/Error) e
                         (or (::iteration (ex-data e)) (throw e))))
               forloop* (-> forloop
                            (update :index inc)
@@ -183,7 +191,7 @@
 
 (defmulti eval-node (fn [node _] (type node)))
 
-(defmethod eval-node String
+(defmethod eval-node #?(:clj String :cljs js/String)
   [node context]
   [node context])
 
