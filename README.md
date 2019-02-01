@@ -1,6 +1,6 @@
 # wet 💧
 
-[![Build Status](https://travis-ci.org/superkonduktr/wet.svg?branch=master)](https://travis-ci.org/superkonduktr/wet)
+[![Build Status](https://travis-ci.org/superkonduktr/wet.svg?branch=master)](https://travis-ci.org/com.flocktory/wet)
 
 wet is a pure Clojure/ClojureScript port of the [Liquid template language](https://shopify.github.io/liquid/)
 built on top of [Instaparse](https://github.com/Engelberg/instaparse).
@@ -10,13 +10,13 @@ built on top of [Instaparse](https://github.com/Engelberg/instaparse).
 #### Leiningen/Boot
 
 ```
-[superkonduktr/wet "0.2.0"]
+[com.flocktory/wet "0.2.0"]
 ```
 
 #### CLI
 
 ```clojure
-{:deps {superkonduktr/wet {:mvn/version "0.2.0"}}}
+{:deps {com.flocktory/wet {:mvn/version "0.2.0"}}}
 ```
 
 ## Usage
@@ -25,7 +25,7 @@ In the vein of the [original library](https://github.com/Shopify/liquid),
 wet provides a minimalistic interface comprising `parse` and `render` functions.
 Calling wet from Clojure and ClojureScript is completely identical.
 
-[`wet.core`](https://github.com/superkonduktr/wet/blob/master/src/wet/core.cljc)
+[`wet.core`](https://github.com/com.flocktory/wet/blob/master/src/wet/core.cljc)
 is the only namespace you are going to need.
 
 ```clojure
@@ -85,7 +85,7 @@ Finally, obtain the rendered result:
 ```
 
 The complete list of core Liquid filters can be found in
-[`wet.filters`](https://github.com/superkonduktr/wet/blob/master/src/wet/filters.cljc).
+[`wet.filters`](https://github.com/com.flocktory/wet/blob/master/src/wet/filters.cljc).
 
 ## Thanks
 
