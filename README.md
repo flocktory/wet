@@ -10,13 +10,13 @@ built on top of [Instaparse](https://github.com/Engelberg/instaparse).
 #### Leiningen/Boot
 
 ```
-[com.flocktory/wet "0.2.0"]
+[com.flocktory/wet "0.2.1"]
 ```
 
 #### CLI
 
 ```clojure
-{:deps {com.flocktory/wet {:mvn/version "0.2.0"}}}
+{:deps {com.flocktory/wet {:mvn/version "0.2.1"}}}
 ```
 
 ## Usage
