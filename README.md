@@ -85,7 +85,7 @@ Finally, obtain the rendered result:
 ```
 
 The complete list of core Liquid filters can be found in
-[`wet.filters`](https://github.com/com.flocktory/wet/blob/master/src/wet/filters.cljc).
+[`wet.filters`](https://github.com/flocktory/wet/blob/master/src/wet/filters.cljc).
 
 ## Thanks
 
