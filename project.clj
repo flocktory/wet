@@ -1,6 +1,6 @@
-(defproject flocktory/wet "0.2.3-SNAPSHOT"
+(defproject amperity/wet "0.2.3-SNAPSHOT"
   :description "Liquid in Clojure"
-  :url "https://github.com/flocktory/wet"
+  :url "https://github.com/amperity/wet"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.9.0"]
