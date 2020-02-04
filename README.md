@@ -1,7 +1,5 @@
 # wet 💧
 
-[![Build Status](https://travis-ci.org/superkonduktr/wet.svg?branch=master)](https://travis-ci.org/com.flocktory/wet)
-
 wet is a pure Clojure/ClojureScript port of the [Liquid template language](https://shopify.github.io/liquid/)
 built on top of [Instaparse](https://github.com/Engelberg/instaparse).
 
@@ -10,13 +8,13 @@ built on top of [Instaparse](https://github.com/Engelberg/instaparse).
 #### Leiningen/Boot
 
 ```
-[com.flocktory/wet "0.2.1"]
+[amperity/wet "0.2.3"]
 ```
 
 #### CLI
 
 ```clojure
-{:deps {com.flocktory/wet {:mvn/version "0.2.1"}}}
+{:deps {amperity/wet {:mvn/version "0.2.3"}}}
 ```
 
 ## Usage
