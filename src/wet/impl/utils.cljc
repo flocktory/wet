@@ -1,7 +1,7 @@
 (ns wet.impl.utils
   #?(:clj (:import (java.util Date))))
 
-#?(:cljs (defn- non-NaN [v] (when-not (js/isNaN v) v)))
+#?(:cljs (defn- non-NaN [^number v] (when-not ^boolean (js/isNaN v) v)))
 
 (defn safe-long
   [v]
